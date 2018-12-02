@@ -53,7 +53,7 @@ class MelodyParser:
         averages = [sum(p)/len(p) for p in part_pitches]
         melody_voice = averages.index(max(averages))
 
-        return [n for n in parts[melody_voice] if type(n) == note.Note]
+        return [n for n in parts[melody_voice] if type(n) == note.Note or type(n) == note.Rest]
 
 
     def melody_durations(self, melody):
@@ -62,7 +62,15 @@ class MelodyParser:
         Example: "72 0.5"
         """
 
-        return [str(n.pitch.midi) + ' ' + str(n.duration.quarterLength) for n in melody]
+        string_melody = []
+
+        for n in melody:
+            if type(n) == note.Note:
+                string_melody.append(str(n.pitch.midi) + ' ' + str(n.duration.quarterLength))
+            elif type(n) == note.Rest:
+                string_melody.append(str('r ' + str(n.duration.quarterLength)))
+
+        return string_melody
 
 
     def undo_melody_durations(self, melody):
@@ -74,7 +82,11 @@ class MelodyParser:
                 pass
             else:
                 p, l = n.split(' ')
-                newNote = note.Note(int(p))
+                if p == 'r':
+                    newNote = note.Rest()
+                else:
+                    newNote = note.Note(int(p))
+
                 newNote.duration.quarterLength = float(l)
                 part.append(newNote)
 
@@ -87,7 +99,15 @@ class MelodyParser:
         Example: "4 0.5"
         """
 
-        return [str(n.pitch.midi%12) + ' ' + str(n.duration.quarterLength) for n in melody]
+        string_melody = []
+
+        for n in melody:
+            if type(n) == note.Note:
+                string_melody.append(str(n.pitch.midi%12) + ' ' + str(n.duration.quarterLength))
+            elif type(n) == note.Rest:
+                string_melody.append(str('r ' + str(n.duration.quarterLength)))
+
+        return string_melody
 
 
     def melody_repetitions(self, melody):
@@ -101,7 +121,10 @@ class MelodyParser:
         new_melody = []
 
         for n in melody:
-            myNote = str(n.pitch.midi)
+            if type(n) == note.Note:
+                myNote = str(n.pitch.midi)
+            else:
+                myNote = 'r'
             repetitions = int(n.duration.quarterLength/self.shortestNote)
             for i in range(repetitions):
                 if i == repetitions-1:
@@ -133,7 +156,11 @@ class MelodyParser:
                     durations[inc] += self.shortestNote
 
         for i in range(len(notes)):
-            newNote = note.Note(int(notes[i]))
+            n = notes[i]
+            if type(n) == 'r':
+                newNote = note.Rest()
+            else:
+                newNote = note.Note(int(n))
             newNote.duration.quarterLength = float(durations[i])
             part.append(newNote)
 
@@ -150,7 +177,10 @@ class MelodyParser:
 
         new_melody = []
         for n in melody:
-            myNote = str(n.pitch.midi%12)
+            if type(n) == note.Note:
+                myNote = str(n.pitch.midi%12)
+            else:
+                myNote = 'r'
             repetitions = int(n.duration.quarterLength/self.shortestNote)
             for i in range(repetitions):
                 if i == repetitions-1:

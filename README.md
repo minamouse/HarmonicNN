@@ -5,10 +5,9 @@ Neural Networks for harmonic sequence generation. Project for Stanford Music 258
 
 ### Tech
 
-Dillinger uses a number of open source projects to work properly:
-
 * [Music21](http://web.mit.edu/music21/) - a toolkit for computer-aided musicology
 * [Keras](https://keras.io/) - the Python deep learning library
+* [Tensorflow](https://www.tensorflow.org/) - An open source machine learning framework for everyone
 
 
 ### Installation

@@ -1,4 +1,4 @@
-from music21 import chord, stream
+from music21 import chord, stream, note
 
 
 class ChordParser:
@@ -51,6 +51,8 @@ class ChordParser:
                 pitches = sorted(list(set([p.midi for p in c.pitches])))
                 pitches.append(c.duration.quarterLength)
                 chords.append(' '.join([str(p) for p in pitches]))
+            elif type(c) == note.Rest:
+                chords.append('r ' + c.duration.quarterLength)
 
         return chords
 
@@ -62,7 +64,10 @@ class ChordParser:
         for c in chords:
             if c != 'r':
                 pitches = c.split(' ')
-                newChord = chord.Chord([int(p) for p in pitches[-1]])
+                if pitches[0] == 'r':
+                    newChord = note.Rest()
+                else:
+                    newChord = chord.Chord([int(p) for p in pitches[-1]])
                 newChord.duration.quarterLength = float(pitches[-1])
                 part.append(newChord)
 
@@ -83,6 +88,8 @@ class ChordParser:
                 pitches = sorted(list(set([p.midi%12 for p in c.pitches])))
                 pitches.append(c.duration.quarterLength)
                 chords.append(' '.join([str(p) for p in pitches]))
+            elif type(c) == note.Rest:
+                chords.append('r ' + c.duration.quarterLength)
 
         return chords
 
@@ -97,9 +104,13 @@ class ChordParser:
         chords = []
 
         for c in chordified:
-            if type(c) == chord.Chord:
-                pitches = sorted(list(set([p.midi for p in c.pitches])))
-                chord_notes = ' '.join([str(p) for p in pitches])
+            if type(c) == chord.Chord or type(c) == note.Rest:
+                if type(c) == chord.Chord:
+                    pitches = sorted(list(set([p.midi for p in c.pitches])))
+                    chord_notes = ' '.join([str(p) for p in pitches])
+                else:
+                    chord_notes = 'r'
+
                 repetitions = int(c.duration.quarterLength/self.shortestNote)
                 for i in range(repetitions):
                     if i == repetitions-1:
@@ -131,7 +142,12 @@ class ChordParser:
                     durations[inc] += self.shortestNote
 
         for i in range(len(pitches)):
-            newChord = chord.Chord([int(p) for p in pitches[i]])
+            n = pitches[i]
+            if n == 'r':
+                newChord = note.Rest
+            else:
+                newChord = chord.Chord([int(p) for p in pitches[i]])
+
             newChord.duration.quarterLength = float(durations[i])
             part.append(newChord)
 
@@ -148,9 +164,13 @@ class ChordParser:
         chords = []
 
         for c in chordified:
-            if type(c) == chord.Chord:
-                pitches = sorted(list(set([p.midi for p in c.pitches])))
-                chord_notes = ' '.join([str(p) for p in pitches])
+            if type(c) == chord.Chord or type(c) == note.Rest:
+                if type(c) == chord.Chord:
+                    pitches = sorted(list(set([p.midi for p in c.pitches])))
+                    chord_notes = ' '.join([str(p) for p in pitches])
+                else:
+                    chord_notes = 'r'
+
                 repetitions = int(c.duration.quarterLength/self.shortestNote)
                 for i in range(repetitions):
                     if i == repetitions-1:

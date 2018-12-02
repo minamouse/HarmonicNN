@@ -1,6 +1,7 @@
 import numpy as np
-from keras.models import Model, Input
-from keras.utils import to_categorical
+import tensorflow as tf
+from keras.models import Model, Input, Sequential
+from keras.utils import to_categorical, np_utils
 from keras.preprocessing.sequence import pad_sequences
 from keras.layers import Embedding, Dropout, Bidirectional, LSTM, TimeDistributed, Dense
 
@@ -67,4 +68,84 @@ class LSTMLabels():
         p = np.argmax(p, axis=-1)
 
         return list(p[0])
+
+def split_input_target(chunk):
+    input_text = chunk[:-1]
+    target_text = chunk[1:]
+    return input_text, target_text
+
+class LSTMGenerate():
+
+    X = []
+    Y = []
+
+    model = None
+
+    max_len = 0
+    padding_x = 0
+    padding_y = 0
+
+    n_x = 0
+    n_y = 0
+
+
+    def __init__(self, X):
+
+        self.max_len = max([len(x) for x in X])
+        self.padding_x = max([max(x) for x in X]) + 1
+
+        self.n_x = self.padding_x + 1
+
+        newX = []
+        for x in X:
+            newX.extend(x)
+
+        seq_length = 5
+        dataX = []
+        dataY = []
+        for i in range(len(newX)-seq_length):
+            dataX.append(newX[i:i+seq_length])
+            dataY.append(newX[i+seq_length])
+        n_patterns = len(dataX)
+        
+        X = np.reshape(dataX, (n_patterns, seq_length, 1))
+        self.X = X / float(self.n_x)
+        self.Y = np_utils.to_categorical(dataY)
+
+
+        self.model = Sequential()
+        self.model.add(LSTM(256, input_shape=(self.X.shape[1], self.X.shape[2]), return_sequences=True))
+        self.model.add(Dropout(0.2))
+        self.model.add(LSTM(256))
+        self.model.add(Dropout(0.2))
+        self.model.add(Dense(self.Y.shape[1], activation='softmax'))
+        self.model.compile(loss='categorical_crossentropy', optimizer='adam')
+
+
+    def train(self, batch_size=32, epochs=100):
+
+        self.model.fit(self.X, self.Y, batch_size=batch_size, epochs=epochs, verbose=2)
+
+
+    def load(self, path):
+        
+        self.model.load_weights(path)
+
+
+    def save(self, path):
+        
+        self.model.save_weights(path)
+
+
+    def generate(self, start, length):
+
+        pattern = start
+        while len(pattern) <= length:
+            x = np.reshape(pattern[-5:], (1, 5, 1))
+            x = x / float(self.n_x)
+            p = self.model.predict(x, verbose=0)
+            p = np.argmax(p, axis=-1)
+            pattern.append(p[0])
+
+        return pattern
 
