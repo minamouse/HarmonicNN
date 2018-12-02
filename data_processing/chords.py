@@ -45,14 +45,15 @@ class ChordParser:
         """
 
         chords = []
-
+        i = 0
         for c in chordified:
+            i += 1
             if type(c) == chord.Chord:
                 pitches = sorted(list(set([p.midi for p in c.pitches])))
                 pitches.append(c.duration.quarterLength)
                 chords.append(' '.join([str(p) for p in pitches]))
             elif type(c) == note.Rest:
-                chords.append('r ' + c.duration.quarterLength)
+                chords.append('r ' + str(c.duration.quarterLength))
 
         return chords
 
@@ -67,8 +68,12 @@ class ChordParser:
                 if pitches[0] == 'r':
                     newChord = note.Rest()
                 else:
-                    newChord = chord.Chord([int(p) for p in pitches[-1]])
-                newChord.duration.quarterLength = float(pitches[-1])
+                    newChord = chord.Chord([int(p) for p in pitches[:-1]])
+                if '/' in pitches[-1]:
+                    num, denom = pitches[-1].split('/')
+                    newChord.duration.quarterLength = float(num)/float(denom)
+                else:
+                    newChord.duration.quarterLength = float(pitches[-1])
                 part.append(newChord)
 
         return part
@@ -89,7 +94,7 @@ class ChordParser:
                 pitches.append(c.duration.quarterLength)
                 chords.append(' '.join([str(p) for p in pitches]))
             elif type(c) == note.Rest:
-                chords.append('r ' + c.duration.quarterLength)
+                chords.append('r ' + str(c.duration.quarterLength))
 
         return chords
 

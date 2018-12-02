@@ -74,6 +74,7 @@ def split_input_target(chunk):
     target_text = chunk[1:]
     return input_text, target_text
 
+
 class LSTMGenerate():
 
     X = []
@@ -100,15 +101,15 @@ class LSTMGenerate():
         for x in X:
             newX.extend(x)
 
-        seq_length = 5
+        self.seq_length = 1
         dataX = []
         dataY = []
-        for i in range(len(newX)-seq_length):
-            dataX.append(newX[i:i+seq_length])
-            dataY.append(newX[i+seq_length])
+        for i in range(len(newX)-self.seq_length):
+            dataX.append(newX[i:i+self.seq_length])
+            dataY.append(newX[i+self.seq_length])
         n_patterns = len(dataX)
         
-        X = np.reshape(dataX, (n_patterns, seq_length, 1))
+        X = np.reshape(dataX, (n_patterns, self.seq_length, 1))
         self.X = X / float(self.n_x)
         self.Y = np_utils.to_categorical(dataY)
 
@@ -140,8 +141,8 @@ class LSTMGenerate():
     def generate(self, start, length):
 
         pattern = start
-        while len(pattern) <= length:
-            x = np.reshape(pattern[-5:], (1, 5, 1))
+        while len(pattern) < length:
+            x = np.reshape(pattern[-self.seq_length:], (1, self.seq_length, 1))
             x = x / float(self.n_x)
             p = self.model.predict(x, verbose=0)
             p = np.argmax(p, axis=-1)

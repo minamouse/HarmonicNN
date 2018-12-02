@@ -32,7 +32,6 @@ class DataParser():
         
         self.files_to_pieces()
 
-
         if self.X_option:
             if 'chord' in self.X_option:
                 self.x_parser = ChordParser(self.pieces, self.X_option)
@@ -66,9 +65,11 @@ class DataParser():
     def save(self, path):
 
         if self.X_dict:
-            pickle.dump(self.X_dict, open(path+'/X_dict.p', 'wb'))
+            pickle.dump(self.X_dict, open(path+'X_dict.p', 'wb'))
+            pickle.dump(self.reverse_X, open(path+'/reverse_X.p', 'wb'))
         if self.Y_dict:
-            pickle.dump(self.Y_dict, open(path+'/Y_dict.p', 'wb'))
+            pickle.dump(self.Y_dict, open(path+'Y_dict.p', 'wb'))
+            pickle.dump(self.reverse_Y, open(path+'/reverse_Y.p', 'wb'))
 
 
     def files_to_pieces(self):
@@ -111,30 +112,32 @@ class DataParser():
             self.Y_n = [[self.Y_dict[y] for y in Y] for Y in self.Y]
 
 
-    def make_song(self, x, y, song_path):
-
-        x_strings = []
-        for i in x:
-            if i in self.reverse_X:
-                x_strings.append(self.reverse_X[i])
-            else:
-                x_strings.append('r')
-
-        part_x = self.x_parser.make_stream(x_strings)
-
-        y_strings = []
-
-        for i in y:
-            if i in self.reverse_Y:
-                y_strings.append(self.reverse_Y[i])
-            else:
-                y_strings.append('r')
-
-        part_y = self.y_parser.make_stream(y_strings)
+    def make_song(self, song_path, x=None, y=None):
 
         piece = stream.Stream()
-        piece.append(part_x)
-        piece.append(part_y)
+
+        if x:
+            x_strings = []
+            for i in x:
+                if i in self.reverse_X:
+                    x_strings.append(self.reverse_X[i])
+                else:
+                    x_strings.append('r')
+
+            part_x = self.x_parser.make_stream(x_strings)
+            piece.append(part_x)
+
+        if y:
+            y_strings = []
+
+            for i in y:
+                if i in self.reverse_Y:
+                    y_strings.append(self.reverse_Y[i])
+                else:
+                    y_strings.append('r')
+
+            part_y = self.y_parser.make_stream(y_strings)
+            piece.append(part_y)
 
         fp = piece.write('midi', fp=song_path+'.mid')
 
