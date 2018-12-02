@@ -1,15 +1,47 @@
-from music21 import converter, note
+from music21 import note, stream
 
 
-def melody():
-    """
-    Returns a list of note objects representing the melody voice.
-    """
+class MelodyParser:
 
-    DATA = []
+    data = []
+    parsing_options = ['melody_durations',
+                       'melody_scale_degree_durations',
+                       'melody_repetitions',
+                       'melody_scale_degree_repetitions']
+    pieces = []
 
-    for f in FILES:
-        piece = converter.parse(f)
+
+    def __init__(self, pieces, parsing_option, shortestNote=0.25):
+
+        if parsing_option not in self.parsing_options:
+            raise ValueError('Invalid melody parsing option.')
+
+        self.pieces = pieces
+        self.parsing_option = parsing_option
+        self.shortestNote = shortestNote
+
+
+    def parse(self):
+
+        for piece in self.pieces:
+            melody = self.melody(piece)
+            if self.parsing_option == 'melody_durations':
+                self.data.append(self.melody_durations(melody))
+            elif self.parsing_option == 'melody_scale_degree_durations':
+                self.data.append(self.melody_scale_degree_durations(melody))
+            elif self.parsing_option == 'melody_repetitions':
+                self.data.append(self.melody_repetitions(melody))
+            elif self.parsing_option == 'melody_scale_degree_repetitions':
+                self.data.append(self.melody_scale_degree_repetitions(melody))
+
+        return self.data
+
+
+    def melody(self, piece):
+        """
+        Returns a list of note objects representing the melody voice.
+        """
+
         parts = [p for p in piece]
         part_pitches = [[] for p in parts]
 
@@ -21,102 +53,121 @@ def melody():
         averages = [sum(p)/len(p) for p in part_pitches]
         melody_voice = averages.index(max(averages))
 
-        DATA.append([n for n in parts[melody_voice] if type(n) == note.Note])
-
-    return DATA
+        return [n for n in parts[melody_voice] if type(n) == note.Note]
 
 
-def melody_durations():
-    """
-    Melodies written in the form of midi note and duration.
-    Example: "72 0.5"
-    """
+    def melody_durations(self, melody):
+        """
+        Melodies written in the form of midi note and duration.
+        Example: "72 0.5"
+        """
 
-    melodies = melody()
-
-    DATA = []
-    for m in melodies:
-        data = []
-        for n in m:
-            data.append(str(n.pitch.midi) + ' ' + str(n.duration.quarterLength))
-        DATA.append(data)
-
-    return DATA
+        return [str(n.pitch.midi) + ' ' + str(n.duration.quarterLength) for n in melody]
 
 
-def melody_scale_degree_durations():
-    """
-    Melodies written in the form of scale degree and duration.
-    Example: "4 0.5"
-    """
+    def undo_melody_durations(self, melody):
 
-    melodies = melody()
+        part = stream.Part()
 
-    DATA = []
+        for n in melody:
+            if n == 'r':
+                pass
+            else:
+                p, l = n.split(' ')
+                newNote = note.Note(int(p))
+                newNote.duration.quarterLength = float(l)
+                part.append(newNote)
 
-    for m in melodies:
-        data = []
-        for n in m:
-            data.append(str(n.pitch.midi%12) + ' ' + str(n.duration.quarterLength))
-        DATA.append(data)
-
-    return DATA
+        return part
 
 
-def melody_repetitions():
-    """
-    Represents notes as lists of numbers, stating whether it's the beginning, middle, or end
-    of the note.
-    Split up by 16th notes.
-    Example: ['71 b', '71 c', '71 c', '71 c', '71 e']
-    """
+    def melody_scale_degree_durations(self, melody):
+        """
+        Melodies written in the form of scale degree and duration.
+        Example: "4 0.5"
+        """
 
-    melodies = melody()
+        return [str(n.pitch.midi%12) + ' ' + str(n.duration.quarterLength) for n in melody]
 
-    DATA = []
 
-    for m in melodies:
-        data = []
-        for n in m:
+    def melody_repetitions(self, melody):
+        """
+        Represents notes as lists of numbers, stating whether it's the beginning, middle, or end
+        of the note.
+        Split up by 16th notes.
+        Example: ['71 b', '71 c', '71 c', '71 c', '71 e']
+        """
+
+        new_melody = []
+
+        for n in melody:
             myNote = str(n.pitch.midi)
-            repetitions = int(n.duration.quarterLength/0.25)
+            repetitions = int(n.duration.quarterLength/self.shortestNote)
             for i in range(repetitions):
                 if i == repetitions-1:
-                    data.append(myNote + ' e')
+                    new_melody.append(myNote + ' e')
                 elif i == 0:
-                    data.append(myNote + ' b')
+                    new_melody.append(myNote + ' b')
                 else:
-                    data.append(myNote + ' c')
-        DATA.append(data)
+                    new_melody.append(myNote + ' c')
 
-    return DATA
+        return new_melody
 
 
-def melody_scale_degree_repetitions():
-    """
-    Represents scale degrees as lists of numbers, stating whether it's the beginning, middle, or end
-    of the note.
-    Split up by 16th notes.
-    Example: ['11 b', '11 c', '11 c', '11 c', '11 e']
-    """
+    def undo_melody_repetitions(self, melody):
 
-    melodies = melody()
+        part = stream.Part()
 
-    DATA = []
+        notes = []
+        durations = []
+        inc = -1
+        for m in melody:
+            if m != 'r':
+                n, pos = m.split(' ')
 
-    for m in melodies:
-        data = []
-        for n in m:
+                if pos == 'b':
+                    inc += 1
+                    durations.append(self.shortestNote)
+                    notes.append(n)
+                else:
+                    durations[inc] += self.shortestNote
+
+        for i in range(len(notes)):
+            newNote = note.Note(int(notes[i]))
+            newNote.duration.quarterLength = float(durations[i])
+            part.append(newNote)
+
+        return part
+
+
+    def melody_scale_degree_repetitions(self, melody):
+        """
+        Represents scale degrees as lists of numbers, stating whether it's the beginning, middle, or end
+        of the note.
+        Split up by 16th notes.
+        Example: ['11 b', '11 c', '11 c', '11 c', '11 e']
+        """
+
+        new_melody = []
+        for n in melody:
             myNote = str(n.pitch.midi%12)
-            repetitions = int(n.duration.quarterLength/0.25)
+            repetitions = int(n.duration.quarterLength/self.shortestNote)
             for i in range(repetitions):
                 if i == repetitions-1:
-                    data.append(myNote + ' e')
+                    new_melody.append(myNote + ' e')
                 elif i == 0:
-                    data.append(myNote + ' b')
+                    new_melody.append(myNote + ' b')
                 else:
-                    data.append(myNote + ' c')
-        DATA.append(data)
+                    new_melody.append(myNote + ' c')
 
-    return DATA
+        return new_melody
+
+
+    def make_stream(self, melody):
+
+        if self.parsing_option == 'melody_durations' or self.parsing_option == 'melody_scale_degree_durations':
+            return self.undo_melody_durations(melody)
+        elif self.parsing_option == 'melody_repetitions' or self.parsing_option == 'melody_scale_degree_repetitions':
+            return self.undo_melody_repetitions(melody)
+
 

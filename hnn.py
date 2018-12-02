@@ -1,27 +1,15 @@
-# import all the important stuff
-# import the other files
-# import the models
-# import the data processing stuff
-import sys
+from data_processing.get_data import DataParser
+from models.lstm import LSTMLabels
+from music21 import stream, midi
 
-if len(sys.argv) < 4:
-    raise ValueError('Not enough arguments.')
-else:
-    FORMAT = sys.argv[1]
-    # MODEL = sys.argv[2]
-    # DATASET = sys.argv[3]
+dp = DataParser('mini', 'melody_repetitions', 'full_chord_repetitions')
+X, Y = dp.parse()
+
+l = LSTMLabels(X[:-1], Y[:-1])
+l.train(32, 10)
+y = l.generate(X[-1])
 
 
-format_options = []
-model_options = []
-dataset_options = []
-
-
-if FORMAT not in format_options:
-    raise ValueError('Format option unavailable.')
-# elif MODEL not in model_options:
-#     raise ValueError('Model option unavailable.')
-# elif DATASET not in dataset_options:
-#     raise ValueError('Dataset option unavailable.')
-
-# check if this combination has already been trained and if so say something!
+s = dp.make_song(X[-1], y, 'models/midi')
+# sp = midi.realtime.StreamPlayer(s)
+# sp.play()

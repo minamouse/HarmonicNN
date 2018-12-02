@@ -2,3 +2,5 @@ venv
 data
 pickle
 .DS_Store
+*.pyc
+*.mid
