@@ -62,6 +62,31 @@ class DataParser():
             return None
 
 
+    def parse_new(self, path):
+
+        self.path = self.path_directory + path
+        self.files_to_pieces()
+
+        all_data = []
+        print self.X_dict
+
+        for i, p in enumerate(self.pieces):
+            data = self.x_parser.parse_new(p)
+            piece = []
+            for d in data:
+                if d in self.X_dict:
+                    piece.append(self.X_dict[d])
+                else:
+                    print d
+                    piece.append(-1)
+            if -1 in piece:
+                print 'didn\'t work'
+            else:
+                all_data.append(piece)
+
+        return all_data
+
+
     def save(self, path):
 
         if self.X_dict:
@@ -73,6 +98,8 @@ class DataParser():
 
 
     def files_to_pieces(self):
+
+        self.pieces = []
 
         for p in os.listdir(self.path):
             if p.split('.')[-1] == 'mid':

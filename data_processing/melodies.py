@@ -37,6 +37,20 @@ class MelodyParser:
         return self.data
 
 
+    def parse_new(self, piece):
+
+        melody = self.melody(piece)
+
+        if self.parsing_option == 'melody_durations':
+            return self.melody_durations(melody)
+        elif self.parsing_option == 'melody_scale_degree_durations':
+            return self.melody_scale_degree_durations(melody)
+        elif self.parsing_option == 'melody_repetitions':
+            return self.melody_repetitions(melody)
+        elif self.parsing_option == 'melody_scale_degree_repetitions':
+            return self.melody_scale_degree_repetitions(melody)
+
+
     def melody(self, piece):
         """
         Returns a list of note objects representing the melody voice.
@@ -153,11 +167,14 @@ class MelodyParser:
                     durations.append(self.shortestNote)
                     notes.append(n)
                 else:
-                    durations[inc] += self.shortestNote
+                    if inc == -1:
+                        pass
+                    else:
+                        durations[inc] += self.shortestNote
 
         for i in range(len(notes)):
             n = notes[i]
-            if type(n) == 'r':
+            if n == 'r':
                 newNote = note.Rest()
             else:
                 newNote = note.Note(int(n))

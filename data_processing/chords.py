@@ -137,14 +137,17 @@ class ChordParser:
         inc = -1
         for c in chords:
             if c != 'r':
-                notes = m.split(' ')
+                notes = c.split(' ')
 
                 if notes[-1] == 'b':
                     inc += 1
                     durations.append(self.shortestNote)
                     pitches.append(notes[:-1])
                 else:
-                    durations[inc] += self.shortestNote
+                    if inc == -1:
+                        pass
+                    else:
+                        durations[inc] += self.shortestNote
 
         for i in range(len(pitches)):
             n = pitches[i]
