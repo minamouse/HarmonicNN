@@ -21,18 +21,27 @@ class MelodyParser:
         self.shortestNote = shortestNote
 
 
-    def parse(self):
+    def parse(self, shouldTranspose):
 
-        for piece in self.pieces:
+        self.shouldTranspose = shouldTranspose
+
+        for i, piece in enumerate(self.pieces):
+            print "melody: " + str(i)
             melody = self.melody(piece)
-            if self.parsing_option == 'melody_durations':
-                self.data.append(self.melody_durations(melody))
-            elif self.parsing_option == 'melody_scale_degree_durations':
-                self.data.append(self.melody_scale_degree_durations(melody))
-            elif self.parsing_option == 'melody_repetitions':
-                self.data.append(self.melody_repetitions(melody))
-            elif self.parsing_option == 'melody_scale_degree_repetitions':
-                self.data.append(self.melody_scale_degree_repetitions(melody))
+            if melody:
+                if self.parsing_option == 'melody_durations':
+                    self.data.append(self.melody_durations(melody))
+                elif self.parsing_option == 'melody_scale_degree_durations':
+                    self.data.append(self.melody_scale_degree_durations(melody))
+                elif self.parsing_option == 'melody_repetitions':
+                    if self.shouldTranspose:
+                        self.data.extend(self.melody_repetitions_transpose(melody))
+                    else:
+                        self.data.append(self.melody_repetitions(melody))
+                elif self.parsing_option == 'melody_scale_degree_repetitions':
+                    self.data.append(self.melody_scale_degree_repetitions(melody))
+            else:
+                print "can't find melody"
 
         return self.data
 
@@ -64,10 +73,13 @@ class MelodyParser:
                 if type(n) == note.Note:
                     part_pitches[i].append(n.pitch.midi)
 
-        averages = [sum(p)/len(p) for p in part_pitches]
-        melody_voice = averages.index(max(averages))
+        averages = [sum(p)/len(p) for p in part_pitches if len(p) > 0]
+        if averages:
+            melody_voice = averages.index(max(averages))
 
-        return [n for n in parts[melody_voice] if type(n) == note.Note or type(n) == note.Rest]
+            return [n for n in parts[melody_voice] if type(n) == note.Note or type(n) == note.Rest]
+        else:
+            None
 
 
     def melody_durations(self, melody):
@@ -147,6 +159,36 @@ class MelodyParser:
                     new_melody.append(myNote + ' b')
                 else:
                     new_melody.append(myNote + ' c')
+
+        return new_melody
+
+
+    def melody_repetitions_transpose(self, melody):
+        """
+        Represents notes as lists of numbers, stating whether it's the beginning, middle, or end
+        of the note.
+        Split up by 16th notes.
+        Example: ['71 b', '71 c', '71 c', '71 c', '71 e']
+        """
+
+        new_melody = []
+
+        for t in range(12):
+            my_melody = []
+            for n in melody:
+                if type(n) == note.Note:
+                    myNote = str(n.pitch.midi + (t-6))
+                else:
+                    myNote = 'r'
+                repetitions = int(n.duration.quarterLength/self.shortestNote)
+                for i in range(repetitions):
+                    if i == repetitions-1:
+                        my_melody.append(myNote + ' e')
+                    elif i == 0:
+                        my_melody.append(myNote + ' b')
+                    else:
+                        my_melody.append(myNote + ' c')
+            new_melody.append(my_melody)
 
         return new_melody
 

@@ -138,10 +138,10 @@ class LSTMGenerate():
         self.model.save_weights(path)
 
 
-    def generate(self, start, length):
+    def generate(self, start, stop, step=1):
 
         pattern = start
-        while len(pattern) < length:
+        while pattern[-1] != stop:
             x = np.reshape(pattern[-self.seq_length:], (1, self.seq_length, 1))
             x = x / float(self.n_x)
             p = self.model.predict(x, verbose=0)

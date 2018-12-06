@@ -20,6 +20,8 @@ class DataParser():
     x_parser = None
     y_parser = None
 
+    shouldTranspose = True
+
 
     def __init__(self, path, X_option=None, Y_option=None):
 
@@ -35,19 +37,18 @@ class DataParser():
         if self.X_option:
             if 'chord' in self.X_option:
                 self.x_parser = ChordParser(self.pieces, self.X_option)
-                self.X = self.x_parser.parse()
+                self.X = self.x_parser.parse(self.shouldTranspose)
             elif 'melody' in self.X_option:
                 self.x_parser = MelodyParser(self.pieces, self.X_option)
-                self.X = self.x_parser.parse()
+                self.X = self.x_parser.parse(self.shouldTranspose)
 
         if self.Y_option:
             if 'chord' in self.Y_option:
                 self.y_parser = ChordParser(self.pieces, self.Y_option)
-                self.Y = self.y_parser.parse()
+                self.Y = self.y_parser.parse(self.shouldTranspose)
             elif 'melody' in self.Y_option:
                 self.y_parser = MelodyParser(self.pieces, self.Y_option)
-                self.Y = self.y_parser.parse()
-
+                self.Y = self.y_parser.parse(self.shouldTranspose)
 
         self.data_to_dict()
         self.to_numerical()
@@ -91,10 +92,10 @@ class DataParser():
 
         if self.X_dict:
             pickle.dump(self.X_dict, open(path+'X_dict.p', 'wb'))
-            pickle.dump(self.reverse_X, open(path+'/reverse_X.p', 'wb'))
+            pickle.dump(self.reverse_X, open(path+'reverse_X.p', 'wb'))
         if self.Y_dict:
             pickle.dump(self.Y_dict, open(path+'Y_dict.p', 'wb'))
-            pickle.dump(self.reverse_Y, open(path+'/reverse_Y.p', 'wb'))
+            pickle.dump(self.reverse_Y, open(path+'reverse_Y.p', 'wb'))
 
 
     def files_to_pieces(self):
@@ -103,7 +104,6 @@ class DataParser():
 
         for p in os.listdir(self.path):
             if p.split('.')[-1] == 'mid':
-                print p
                 self.pieces.append(converter.parse(self.path + '/' + p))
 
 
